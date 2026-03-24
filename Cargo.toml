@@ -1,9 +1,9 @@
 [package]
 name = "paiagram-oudia"
 version = "0.1.0"
-edition.workspace = true
+edition = "2024"
 license = "MIT OR Apache-2.0"
-repository.workspace = true
+repository = "https://github.com/wensimehrp/paiagram-oudia"
 
 [dependencies]
 anyhow = "1.0.101"
