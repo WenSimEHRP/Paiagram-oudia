@@ -11,6 +11,8 @@ use thiserror::Error;
 /// The root of the structure
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Root {
     /// File type. Usually the software name + version.
     #[doc(alias = "FileType")]
@@ -25,6 +27,8 @@ pub struct Root {
 #[doc(alias = "Rosen")]
 #[doc(alias = "路線")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Route {
     /// The name of the route
     #[doc(alias = "Rosenmei")]
@@ -56,6 +60,8 @@ pub struct Route {
 #[doc(alias = "Eki")]
 #[doc(alias = "駅")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Station {
     #[doc(alias = "Ekimei")]
     #[doc(alias = "駅名")]
@@ -82,11 +88,14 @@ pub struct Station {
     pub loop_index: Option<usize>,
     /// The tracks of the station
     #[doc(alias = "EkiTrack2Cont")]
+    #[cfg_attr(feature = "wasm", tsify(type = "Track[]"))]
     pub tracks: SmallVec<[Track; 2]>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Track {
     #[doc(alias = "TrackName")]
     pub name: String,
@@ -98,6 +107,8 @@ pub struct Track {
 /// Color. This color is stored in ARGB format.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Color(pub [u8; 4]);
 
 impl Color {
@@ -138,6 +149,8 @@ impl std::str::FromStr for Color {
 #[doc(alias = "Ressyasyubetsu")]
 #[doc(alias = "列車種別")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Class {
     #[doc(alias = "Syubetsumei")]
     #[doc(alias = "種別名")]
@@ -158,6 +171,8 @@ pub struct Class {
 #[doc(alias = "ダイヤ")]
 #[doc(alias = "ダイアグラム")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Diagram {
     #[doc(alias = "DiaName")]
     pub name: Option<String>,
@@ -168,6 +183,8 @@ pub struct Diagram {
 #[doc(alias = "Houkou")]
 #[doc(alias = "方向")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub enum Direction {
     #[doc(alias = "Nobori")]
     #[doc(alias = "上り")]
@@ -194,6 +211,8 @@ impl std::str::FromStr for Direction {
 #[doc(alias = "Ressya")]
 #[doc(alias = "列車")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Trip {
     #[doc(alias = "Ressyabangou")]
     #[doc(alias = "列車番号")]

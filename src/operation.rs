@@ -30,10 +30,13 @@ pub trait InsertOperation<'a> {
 }
 
 macro_rules! impl_get_before_after {
-    ($x:ident, $native:ident, $native_type:ty) => {
+    ($x:ident, $native:ident, $native_type:ty, $ts_type:expr) => {
         #[derive(Debug, Clone, PartialEq, Default, Eq)]
         #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+        #[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+        #[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
         pub struct $x {
+            #[cfg_attr(feature = "wasm", tsify(type = $ts_type))]
             pub ops: SmallVec<[$native_type; 1]>,
             pub befores: Vec<BeforeOperationTree>,
             pub afters: Vec<AfterOperationTree>,
@@ -80,11 +83,13 @@ macro_rules! impl_get_before_after {
     };
 }
 
-impl_get_before_after!(BeforeOperationTree, befores, BeforeOperation);
-impl_get_before_after!(AfterOperationTree, afters, AfterOperation);
+impl_get_before_after!(BeforeOperationTree, befores, BeforeOperation, "BeforeOperation[]");
+impl_get_before_after!(AfterOperationTree, afters, AfterOperation, "AfterOperation[]");
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct RootOperationTree {
     pub befores: BeforeOperationTree,
     pub afters: AfterOperationTree,
@@ -186,6 +191,8 @@ impl<'a> SerializeToOud for RawOperation<'a> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct ShuntOperation {
     pub track_index: usize,
     pub departure_time: Option<Time>,
@@ -211,6 +218,8 @@ impl TryFrom<&[Option<&str>]> for ShuntOperation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct CoupleOperation {
     pub add_to_front: bool,
     pub time: Option<Time>,
@@ -228,6 +237,8 @@ impl TryFrom<&[Option<&str>]> for CoupleOperation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct DecoupleOperation {
     pub position_index: usize,
     pub count: usize,
@@ -247,9 +258,12 @@ impl TryFrom<&[Option<&str>]> for DecoupleOperation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct EnterFromDepotOperation {
     pub time: Option<Time>,
     pub link_code: Option<String>,
+    #[cfg_attr(feature = "wasm", tsify(type = "string[]"))]
     pub operation_numbers: SmallVec<[String; 2]>,
 }
 
@@ -266,6 +280,8 @@ impl<'a> TryFrom<&[Option<&'a str>]> for EnterFromDepotOperation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct ExitToDepotOperation {
     pub time: Option<Time>,
     pub link_code: Option<String>,
@@ -283,15 +299,18 @@ impl<'a> TryFrom<&[Option<&'a str>]> for ExitToDepotOperation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct BeforeEnterFromExternalRouteOperation {
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
+pub struct EnterFromExternalRouteOperation {
     pub station_index: usize,
     pub time: Option<Time>,
     pub arrival_time: Option<Time>,
     pub link_code: Option<String>,
+    #[cfg_attr(feature = "wasm", tsify(type = "string[]"))]
     pub operation_numbers: SmallVec<[String; 2]>,
 }
 
-impl<'a> TryFrom<&[Option<&'a str>]> for BeforeEnterFromExternalRouteOperation {
+impl<'a> TryFrom<&[Option<&'a str>]> for EnterFromExternalRouteOperation {
     type Error = OperationParseError;
     fn try_from(value: &[Option<&'a str>]) -> Result<Self, Self::Error> {
         Ok(Self {
@@ -306,6 +325,8 @@ impl<'a> TryFrom<&[Option<&'a str>]> for BeforeEnterFromExternalRouteOperation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct ExitToExternalRouteOperation {
     pub station_index: usize,
     pub time: Option<Time>,
@@ -327,8 +348,11 @@ impl<'a> TryFrom<&[Option<&'a str>]> for ExitToExternalRouteOperation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct ContinuePreviousTripOperation {
     pub time: Option<Time>,
+    #[cfg_attr(feature = "wasm", tsify(type = "string[]"))]
     pub operation_numbers: SmallVec<[String; 2]>,
     pub next_junction_type: Option<i32>,
 }
@@ -346,7 +370,10 @@ impl<'a> TryFrom<&[Option<&'a str>]> for ContinuePreviousTripOperation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct ChangeOperationNumberOperation {
+    #[cfg_attr(feature = "wasm", tsify(type = "string[]"))]
     pub operation_numbers: SmallVec<[String; 2]>,
     pub reverse: bool,
 }
@@ -367,12 +394,14 @@ impl<'a> TryFrom<&[Option<&'a str>]> for ChangeOperationNumberOperation {
 #[repr(u32)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub enum BeforeOperation {
     Shunt(ShuntOperation) = 0,
     Couple(CoupleOperation) = 1,
     Decouple(DecoupleOperation) = 2,
     EnterFromDepot(EnterFromDepotOperation) = 3,
-    EnterFromExternalRoute(BeforeEnterFromExternalRouteOperation) = 4,
+    EnterFromExternalRoute(EnterFromExternalRouteOperation) = 4,
     ContinuePreviousTrip(ContinuePreviousTripOperation) = 5,
     ChangeOperationNumber(ChangeOperationNumberOperation) = 6,
 }
@@ -399,6 +428,8 @@ impl<'a> TryFrom<RawOperation<'a>> for BeforeOperation {
 #[repr(u32)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub enum AfterOperation {
     Shunt(ShuntOperation) = 0,
     Couple(CoupleOperation) = 1,

@@ -47,6 +47,7 @@
               rustToolchain
               pkg-config
               wasm-bindgen-cli_0_2_114
+              wasm-pack
               just
               binaryen
               stdenv.cc.cc

@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 #[doc(alias = "駅扱")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub enum ServiceMode {
     #[default]
     #[doc(alias = "運行なし")]
@@ -23,6 +25,8 @@ pub enum ServiceMode {
 #[doc(alias = "Ekijikoku")]
 #[doc(alias = "駅時刻")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub struct TimetableEntry {
     #[doc(alias = "駅扱")]
     pub service_mode: ServiceMode,
