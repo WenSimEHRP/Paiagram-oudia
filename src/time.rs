@@ -1,11 +1,11 @@
+use crate::ast::SerializeToOud;
 use derive_more::{Add, AddAssign, Sub, SubAssign};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use std::{
     fmt::{Debug, Display},
     num::ParseIntError,
 };
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-use crate::ast::SerializeToOud;
 
 /// A Time
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Add, AddAssign, Sub, SubAssign, Hash)]

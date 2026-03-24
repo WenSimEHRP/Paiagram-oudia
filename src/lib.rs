@@ -7,8 +7,8 @@ pub use timetable::{ServiceMode, TimetableEntry};
 use crate::ast::parse_to_ast;
 
 pub mod ast;
-pub mod operation;
 pub mod ir;
+pub mod operation;
 pub mod time;
 pub mod timetable;
 
