@@ -3,11 +3,13 @@ use std::{
     fmt::{Debug, Display},
     num::ParseIntError,
 };
-
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use crate::ast::SerializeToOud;
 
 /// A Time
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Add, AddAssign, Sub, SubAssign, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Time(i32);
 
 impl Debug for Time {

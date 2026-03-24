@@ -1,4 +1,6 @@
 use pest_consume::Parser;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use thiserror::Error;
 
@@ -30,6 +32,7 @@ pub trait InsertOperation<'a> {
 macro_rules! impl_get_before_after {
     ($x:ident, $native:ident, $native_type:ty) => {
         #[derive(Debug, Clone, PartialEq, Default, Eq)]
+        #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
         pub struct $x {
             pub ops: SmallVec<[$native_type; 1]>,
             pub befores: Vec<BeforeOperationTree>,
@@ -81,6 +84,7 @@ impl_get_before_after!(BeforeOperationTree, befores, BeforeOperation);
 impl_get_before_after!(AfterOperationTree, afters, AfterOperation);
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RootOperationTree {
     pub befores: BeforeOperationTree,
     pub afters: AfterOperationTree,
@@ -181,6 +185,7 @@ impl<'a> SerializeToOud for RawOperation<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ShuntOperation {
     pub track_index: usize,
     pub departure_time: Option<Time>,
@@ -205,6 +210,7 @@ impl TryFrom<&[Option<&str>]> for ShuntOperation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CoupleOperation {
     pub add_to_front: bool,
     pub time: Option<Time>,
@@ -221,6 +227,7 @@ impl TryFrom<&[Option<&str>]> for CoupleOperation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DecoupleOperation {
     pub position_index: usize,
     pub count: usize,
@@ -239,6 +246,7 @@ impl TryFrom<&[Option<&str>]> for DecoupleOperation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EnterFromDepotOperation {
     pub time: Option<Time>,
     pub link_code: Option<String>,
@@ -257,6 +265,7 @@ impl<'a> TryFrom<&[Option<&'a str>]> for EnterFromDepotOperation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ExitToDepotOperation {
     pub time: Option<Time>,
     pub link_code: Option<String>,
@@ -273,6 +282,7 @@ impl<'a> TryFrom<&[Option<&'a str>]> for ExitToDepotOperation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BeforeEnterFromExternalRouteOperation {
     pub station_index: usize,
     pub time: Option<Time>,
@@ -295,6 +305,7 @@ impl<'a> TryFrom<&[Option<&'a str>]> for BeforeEnterFromExternalRouteOperation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ExitToExternalRouteOperation {
     pub station_index: usize,
     pub time: Option<Time>,
@@ -315,6 +326,7 @@ impl<'a> TryFrom<&[Option<&'a str>]> for ExitToExternalRouteOperation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ContinuePreviousTripOperation {
     pub time: Option<Time>,
     pub operation_numbers: SmallVec<[String; 2]>,
@@ -333,6 +345,7 @@ impl<'a> TryFrom<&[Option<&'a str>]> for ContinuePreviousTripOperation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ChangeOperationNumberOperation {
     pub operation_numbers: SmallVec<[String; 2]>,
     pub reverse: bool,
@@ -353,6 +366,7 @@ impl<'a> TryFrom<&[Option<&'a str>]> for ChangeOperationNumberOperation {
 
 #[repr(u32)]
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum BeforeOperation {
     Shunt(ShuntOperation) = 0,
     Couple(CoupleOperation) = 1,
@@ -384,6 +398,7 @@ impl<'a> TryFrom<RawOperation<'a>> for BeforeOperation {
 
 #[repr(u32)]
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum AfterOperation {
     Shunt(ShuntOperation) = 0,
     Couple(CoupleOperation) = 1,

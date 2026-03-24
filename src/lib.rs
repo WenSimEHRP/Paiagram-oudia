@@ -82,7 +82,15 @@ macro_rules! pair {
     (@extend $items:ident $(,)?) => {};
 }
 
-pub fn parse_to_ir(input: &str) -> Result<Root, IrConversionError> {
+/// Parse a UTF-8 encoded Oud2 string slice into a [`Root`] intermediate representation.
+pub fn parse_oud2_to_ir(input: &str) -> Result<Root, IrConversionError> {
     let v = parse_to_ast(input).map_err(IrConversionError::from)?;
+    Root::try_from(v.as_slice())
+}
+
+/// Parse a Shift-JIS encoded Oud slice into a [`Root`] intermediate representation.
+pub fn parse_oud_to_ir(input: &[u8]) -> Result<Root, IrConversionError> {
+    let (utf_8_input, _, _) = encoding_rs::SHIFT_JIS.decode(input);
+    let v = parse_to_ast(&utf_8_input).map_err(IrConversionError::from)?;
     Root::try_from(v.as_slice())
 }

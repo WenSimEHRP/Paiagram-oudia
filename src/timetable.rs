@@ -1,10 +1,13 @@
 use crate::operation::RootOperationTree;
 use crate::time::Time;
 use pest_consume::Parser;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 #[repr(u32)]
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 #[doc(alias = "駅扱")]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ServiceMode {
     #[default]
     #[doc(alias = "運行なし")]
@@ -19,6 +22,7 @@ pub enum ServiceMode {
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 #[doc(alias = "Ekijikoku")]
 #[doc(alias = "駅時刻")]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TimetableEntry {
     #[doc(alias = "駅扱")]
     pub service_mode: ServiceMode,

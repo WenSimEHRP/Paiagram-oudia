@@ -2,12 +2,15 @@ use crate::operation::{InsertOperation, parse_to_operation_hierarchy, parse_to_r
 use crate::time::Time;
 use crate::timetable::{TimetableEntry, parse_to_timetable_entry};
 use crate::{pair, structure};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use std::borrow::Cow;
 use thiserror::Error;
 
 /// The root of the structure
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Root {
     /// File type. Usually the software name + version.
     #[doc(alias = "FileType")]
@@ -21,6 +24,7 @@ pub struct Root {
 #[derive(Debug, Clone, PartialEq)]
 #[doc(alias = "Rosen")]
 #[doc(alias = "路線")]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Route {
     /// The name of the route
     #[doc(alias = "Rosenmei")]
@@ -51,6 +55,7 @@ pub struct Route {
 #[derive(Debug, Clone, PartialEq)]
 #[doc(alias = "Eki")]
 #[doc(alias = "駅")]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Station {
     #[doc(alias = "Ekimei")]
     #[doc(alias = "駅名")]
@@ -81,6 +86,7 @@ pub struct Station {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Track {
     #[doc(alias = "TrackName")]
     pub name: String,
@@ -91,6 +97,7 @@ pub struct Track {
 
 /// Color. This color is stored in ARGB format.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Color(pub [u8; 4]);
 
 impl Color {
@@ -130,6 +137,7 @@ impl std::str::FromStr for Color {
 #[derive(Debug, Clone, PartialEq)]
 #[doc(alias = "Ressyasyubetsu")]
 #[doc(alias = "列車種別")]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Class {
     #[doc(alias = "Syubetsumei")]
     #[doc(alias = "種別名")]
@@ -149,6 +157,7 @@ pub struct Class {
 #[doc(alias = "Dia")]
 #[doc(alias = "ダイヤ")]
 #[doc(alias = "ダイアグラム")]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Diagram {
     #[doc(alias = "DiaName")]
     pub name: Option<String>,
@@ -158,6 +167,7 @@ pub struct Diagram {
 #[derive(Debug, Clone, PartialEq)]
 #[doc(alias = "Houkou")]
 #[doc(alias = "方向")]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Direction {
     #[doc(alias = "Nobori")]
     #[doc(alias = "上り")]
@@ -183,6 +193,7 @@ impl std::str::FromStr for Direction {
 #[derive(Debug, Clone, PartialEq)]
 #[doc(alias = "Ressya")]
 #[doc(alias = "列車")]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Trip {
     #[doc(alias = "Ressyabangou")]
     #[doc(alias = "列車番号")]
