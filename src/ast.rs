@@ -65,7 +65,7 @@ pub mod oudia {
 /// The structure of the .oud/oud2 format.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Structure<'a> {
-    /// A struct. A struct have an identifier and children fields,
+    /// A struct. A struct has an identifier and children fields,
     /// which could be either a [`Self::Struct`], or a [`Self::Pair`]
     Struct(Cow<'a, str>, Vec<Structure<'a>>),
     /// A pair. A pair comes with an identifier and children values.

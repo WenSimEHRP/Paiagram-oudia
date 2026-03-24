@@ -7,6 +7,9 @@ pub use timetable::{ServiceMode, TimetableEntry};
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
+#[macro_use]
+mod macros;
+
 pub mod ast;
 pub mod ir;
 pub mod operation;

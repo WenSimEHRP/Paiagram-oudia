@@ -2,114 +2,131 @@ use crate::operation::{InsertOperation, parse_to_operation_hierarchy, parse_to_r
 use crate::time::Time;
 use crate::timetable::{TimetableEntry, parse_to_timetable_entry};
 use crate::{pair, structure};
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use std::borrow::Cow;
 use thiserror::Error;
 
-/// The root of the structure
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
-pub struct Root {
-    /// File type. Usually the software name + version.
-    #[doc(alias = "FileType")]
-    pub file_type: String,
-    /// The route in the file.
+wasm_support!(
+    /// The root of the structure
+    pub struct Root {
+        /// File type. Usually the software name + version.
+        /// Also known as `FileType`.
+        #[doc(alias = "FileType")]
+        pub file_type: String,
+        /// The route in the file.
+        /// Also known as `Rosen`.
+        /// Also known as `路線`.
+        #[doc(alias = "Rosen")]
+        #[doc(alias = "路線")]
+        pub route: Route,
+    }
+);
+
+wasm_support!(
+    /// Also known as `Rosen`.
+    /// Also known as `路線`.
     #[doc(alias = "Rosen")]
     #[doc(alias = "路線")]
-    pub route: Route,
-}
+    pub struct Route {
+        /// The name of the route
+        /// Also known as `Rosenmei`.
+        /// Also known as `路線名`.
+        #[doc(alias = "Rosenmei")]
+        #[doc(alias = "路線名")]
+        pub name: String,
+        /// What stations are included in the route
+        /// Also known as `Eki`.
+        /// Also known as `駅`.
+        #[doc(alias = "Eki")]
+        #[doc(alias = "駅")]
+        pub stations: Vec<Station>,
+        /// The available train classes. E.g., local, express.
+        /// Also known as `Ressyasyubetsu`.
+        /// Also known as `列車種別`.
+        #[doc(alias = "Ressyasyubetsu")]
+        #[doc(alias = "列車種別")]
+        pub classes: Vec<Class>,
+        /// The diagrams included in this route. Each diagram is a timetable set.
+        /// Also known as `Dia`.
+        /// Also known as `ダイヤ`.
+        #[doc(alias = "Dia")]
+        #[doc(alias = "ダイヤ")]
+        pub diagrams: Vec<Diagram>,
+        /// When to start displaying times on the diagram page.
+        /// Also known as `KitenJikoku`.
+        /// Also known as `起点時刻`.
+        #[doc(alias = "KitenJikoku")]
+        #[doc(alias = "起点時刻")]
+        pub display_start_time: Time,
+        /// Also known as `Comment`.
+        #[doc(alias = "Comment")]
+        pub comment: String,
+    }
+);
 
-#[derive(Debug, Clone, PartialEq)]
-#[doc(alias = "Rosen")]
-#[doc(alias = "路線")]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
-pub struct Route {
-    /// The name of the route
-    #[doc(alias = "Rosenmei")]
-    #[doc(alias = "路線名")]
-    pub name: String,
-    /// What stations are included in the route
+wasm_support!(
+    /// A station on the route.
+    /// Also known as `Eki`.
+    /// Also known as `駅`.
     #[doc(alias = "Eki")]
     #[doc(alias = "駅")]
-    pub stations: Vec<Station>,
-    /// The available train classes. E.g., local, express.
-    #[doc(alias = "Ressyasyubetsu")]
-    #[doc(alias = "列車種別")]
-    pub classes: Vec<Class>,
-    /// The diagrams included in this route. Each diagram is a timetable set.
-    #[doc(alias = "Dia")]
-    #[doc(alias = "ダイヤ")]
-    #[doc(alias = "ダイアグラム")]
-    pub diagrams: Vec<Diagram>,
-    /// When to start displaying times on the diagram page.
-    #[doc(alias = "KitenJikoku")]
-    #[doc(alias = "起点時刻")]
-    pub display_start_time: Time,
-    #[doc(alias = "Comment")]
-    pub comment: String,
-}
+    pub struct Station {
+        /// Also known as `Ekimei`.
+        /// Also known as `駅名`.
+        #[doc(alias = "Ekimei")]
+        #[doc(alias = "駅名")]
+        pub name: String,
+        /// The abbreviation used in timetables.
+        /// Also known as `EkimeiJikokuRyaku`.
+        /// Also known as `駅名時刻略`.
+        #[doc(alias = "EkimeiJikokuRyaku")]
+        #[doc(alias = "駅名時刻略")]
+        pub timetable_abbreviation: Option<String>,
+        /// The abbreviation used in diagrams.
+        /// Also known as `EkimeiDiaRyaku`.
+        /// Also known as `駅名ダイヤ略`.
+        #[doc(alias = "EkimeiDiaRyaku")]
+        #[doc(alias = "駅名ダイヤ略")]
+        pub diagram_abbreviation: Option<String>,
+        /// Stations that branch off at certain points may repeat themselves on
+        /// the diagram. This index refers to the other station in the station list
+        /// that should be treated as if it is this station. Please also note that
+        /// the name `BrunchCoreEkiIndex` contains a spelling mistake. It should be
+        /// `branch` instead of `brunch`.
+        ///  Also known as `BrunchCoreEkiIndex`.
+        #[doc(alias = "BrunchCoreEkiIndex")]
+        pub branch_index: Option<usize>,
+        /// Diagrams representing loop lines may repeat certain stations on
+        /// the diagram. This index refers to the other station in the station list
+        /// that should be treated as if it is this station.
+        /// Also known as `LoopOriginEkiIndex`.
+        #[doc(alias = "LoopOriginEkiIndex")]
+        pub loop_index: Option<usize>,
+        /// The tracks of the station
+        /// Also known as `EkiTrack2Cont`.
+        #[doc(alias = "EkiTrack2Cont")]
+        #[cfg_attr(feature = "wasm", tsify(type = "Track[]"))]
+        pub tracks: SmallVec<[Track; 2]>,
+    }
+);
 
-/// A station on the route.
-#[derive(Debug, Clone, PartialEq)]
-#[doc(alias = "Eki")]
-#[doc(alias = "駅")]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
-pub struct Station {
-    #[doc(alias = "Ekimei")]
-    #[doc(alias = "駅名")]
-    pub name: String,
-    /// The abbreviation used in timetables.
-    #[doc(alias = "EkimeiJikokuRyaku")]
-    #[doc(alias = "駅名時刻略")]
-    pub timetable_abbreviation: Option<String>,
-    /// The abbreviation used in diagrams.
-    #[doc(alias = "EkimeiDiaRyaku")]
-    #[doc(alias = "駅名ダイヤ略")]
-    pub diagram_abbreviation: Option<String>,
-    /// Stations that branch off at certain points may repeat themselves on
-    /// the diagram. This index refers to the other station in the station list
-    /// that should be treated as if it is this station. Please also note that
-    /// the name "BrunchCoreEkiIndex" contains a spelling mistake. It should be
-    /// "branch" instead of "brunch"
-    #[doc(alias = "BrunchCoreEkiIndex")]
-    pub branch_index: Option<usize>,
-    /// Diagrams representing loop lines may repeat certain stations on
-    /// the diagram. This index refers to the other station in the station list
-    /// that should be treated as if it is this station.
-    #[doc(alias = "LoopOriginEkiIndex")]
-    pub loop_index: Option<usize>,
-    /// The tracks of the station
-    #[doc(alias = "EkiTrack2Cont")]
-    #[cfg_attr(feature = "wasm", tsify(type = "Track[]"))]
-    pub tracks: SmallVec<[Track; 2]>,
-}
+wasm_support!(
+    pub struct Track {
+        /// Also known as `TrackName`.
+        #[doc(alias = "TrackName")]
+        pub name: String,
+        /// Also known as `TrackRyakusyou`.
+        /// Also known as `Track略称`.
+        #[doc(alias = "TrackRyakusyou")]
+        #[doc(alias = "Track略称")]
+        pub abbreviation: String,
+    }
+);
 
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
-pub struct Track {
-    #[doc(alias = "TrackName")]
-    pub name: String,
-    #[doc(alias = "TrackRyakusyou")]
-    #[doc(alias = "Track略称")]
-    pub abbreviation: String,
-}
-
-/// Color. This color is stored in ARGB format.
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
-pub struct Color(pub [u8; 4]);
+wasm_support!(
+    /// Color. This color is stored in ARGB format.
+    pub struct Color(pub [u8; 4]);
+);
 
 impl Color {
     pub fn a(&self) -> u8 {
@@ -144,55 +161,65 @@ impl std::str::FromStr for Color {
     }
 }
 
-/// A train class. E.g., local, express.
-#[derive(Debug, Clone, PartialEq)]
-#[doc(alias = "Ressyasyubetsu")]
-#[doc(alias = "列車種別")]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
-pub struct Class {
-    #[doc(alias = "Syubetsumei")]
-    #[doc(alias = "種別名")]
-    pub name: String,
-    /// An optional abbreviation.
-    #[doc(alias = "Ryakusyou")]
-    #[doc(alias = "略称")]
-    pub abbreviation: Option<String>,
-    /// The color displayed in diagrams and in the timetable.
-    #[doc(alias = "DiagramSenColor")]
-    #[doc(alias = "ダイア線Color")]
-    pub diagram_line_color: Color,
-}
+wasm_support!(
+    /// A train class. E.g., local, express.
+    /// Also known as `Ressyasyubetsu`.
+    /// Also known as `列車種別`.
+    #[doc(alias = "Ressyasyubetsu")]
+    #[doc(alias = "列車種別")]
+    pub struct Class {
+        /// Also known as `Syubetsumei`.
+        /// Also known as `種別名`.
+        #[doc(alias = "Syubetsumei")]
+        #[doc(alias = "種別名")]
+        pub name: String,
+        /// An optional abbreviation.
+        /// Also known as `Ryakusyou`.
+        /// Also known as `略称`.
+        #[doc(alias = "Ryakusyou")]
+        #[doc(alias = "略称")]
+        pub abbreviation: Option<String>,
+        /// The color displayed in diagrams and in the timetable.
+        /// Also known as `DiagramSenColor`.
+        /// Also known as `ダイア線Color`.
+        #[doc(alias = "DiagramSenColor")]
+        #[doc(alias = "ダイア線Color")]
+        pub diagram_line_color: Color,
+    }
+);
 
-/// A timetable set.
-#[derive(Debug, Clone, PartialEq)]
-#[doc(alias = "Dia")]
-#[doc(alias = "ダイヤ")]
-#[doc(alias = "ダイアグラム")]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
-pub struct Diagram {
-    #[doc(alias = "DiaName")]
-    pub name: Option<String>,
-    pub trips: Vec<Trip>,
-}
+wasm_support!(
+    /// A timetable set.
+    /// Also known as `Dia`.
+    /// Also known as `ダイヤ`.
+    #[doc(alias = "Dia")]
+    #[doc(alias = "ダイヤ")]
+    pub struct Diagram {
+        /// Also known as `DiaName`.
+        #[doc(alias = "DiaName")]
+        pub name: Option<String>,
+        pub trips: Vec<Trip>,
+    }
+);
 
-#[derive(Debug, Clone, PartialEq)]
-#[doc(alias = "Houkou")]
-#[doc(alias = "方向")]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
-pub enum Direction {
-    #[doc(alias = "Nobori")]
-    #[doc(alias = "上り")]
-    Up,
-    #[doc(alias = "Kudari")]
-    #[doc(alias = "下り")]
-    Down,
-}
+wasm_support!(
+    /// Also known as `Houkou`.
+    /// Also known as `方向`.
+    #[doc(alias = "Houkou")]
+    #[doc(alias = "方向")]
+    pub enum Direction {
+        /// Also known as `Nobori`.
+        /// Also known as `上り`.
+        #[doc(alias = "Nobori")]
+        #[doc(alias = "上り")]
+        Up,
+        /// Also known as `Kudari`.
+        /// Also known as `下り`.
+        #[doc(alias = "Kudari")]
+        #[doc(alias = "下り")]
+        Down,
+    }
+);
 
 impl std::str::FromStr for Direction {
     type Err = IrConversionError;
@@ -207,35 +234,47 @@ impl std::str::FromStr for Direction {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-#[doc(alias = "Ressya")]
-#[doc(alias = "列車")]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
-pub struct Trip {
-    #[doc(alias = "Ressyabangou")]
-    #[doc(alias = "列車番号")]
-    pub name: Option<String>,
-    #[doc(alias = "Bikou")]
-    #[doc(alias = "備考")]
-    pub comment: Option<String>,
-    #[doc(alias = "Houkou")]
-    #[doc(alias = "方向")]
-    pub direction: Direction,
-    #[doc(alias = "Syubetsu")]
-    #[doc(alias = "種別")]
-    pub class_index: usize,
-    #[doc(alias = "EkiJikoku")]
-    #[doc(alias = "駅時刻")]
-    pub times: Vec<TimetableEntry>,
-}
+wasm_support!(
+    /// Also known as `Ressya`.
+    /// Also known as `列車`.
+    #[doc(alias = "Ressya")]
+    #[doc(alias = "列車")]
+    pub struct Trip {
+        /// Also known as `Ressyabangou`.
+        /// Also known as `列車番号`.
+        #[doc(alias = "Ressyabangou")]
+        #[doc(alias = "列車番号")]
+        pub name: Option<String>,
+        /// Also known as `Bikou`.
+        /// Also known as `備考`.
+        #[doc(alias = "Bikou")]
+        #[doc(alias = "備考")]
+        pub comment: Option<String>,
+        /// Also known as `Houkou`.
+        /// Also known as `方向`.
+        #[doc(alias = "Houkou")]
+        #[doc(alias = "方向")]
+        pub direction: Direction,
+        /// Also known as `Syubetsu`.
+        /// Also known as `種別`.
+        #[doc(alias = "Syubetsu")]
+        #[doc(alias = "種別")]
+        pub class_index: usize,
+        /// Also known as `EkiJikoku`.
+        /// Also known as `駅時刻`.
+        #[doc(alias = "EkiJikoku")]
+        #[doc(alias = "駅時刻")]
+        pub times: Vec<TimetableEntry>,
+    }
+);
 
-#[derive(Debug, Clone, PartialEq)]
+/// Also known as `運用`.
 #[doc(alias = "運用")]
 pub struct Rotation<'a> {
+    /// Also known as `運用番号`.
     #[doc(alias = "運用番号")]
     pub name: String,
+    /// Also known as `列車番号`.
     #[doc(alias = "列車番号")]
     pub trips: Vec<&'a Trip>,
 }

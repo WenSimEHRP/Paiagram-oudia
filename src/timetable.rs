@@ -1,46 +1,52 @@
 use crate::operation::RootOperationTree;
 use crate::time::Time;
 use pest_consume::Parser;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 
-#[repr(u32)]
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-#[doc(alias = "駅扱")]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
-pub enum ServiceMode {
-    #[default]
-    #[doc(alias = "運行なし")]
-    NoOperation = 0,
-    #[doc(alias = "停車")]
-    Stop = 1,
-    #[doc(alias = "通過")]
-    Pass = 2,
-}
-
-/// A timetable entry
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
-#[doc(alias = "Ekijikoku")]
-#[doc(alias = "駅時刻")]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "wasm", derive(tsify::Tsify))]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
-pub struct TimetableEntry {
+wasm_support!(
+    #[repr(u32)]
+    #[derive(Default, Copy, Eq)]
+    /// Also known as `駅扱`.
     #[doc(alias = "駅扱")]
-    pub service_mode: ServiceMode,
-    #[doc(alias = "着時刻")]
-    pub arrival_time: Option<Time>,
-    #[doc(alias = "発時刻")]
-    pub departure_time: Option<Time>,
-    #[doc(alias = "着発番線")]
-    pub track_index: Option<usize>,
-    /// Operations associated with this timetable entry.
-    /// This field is relatively rare, thus we put it in an [`Option<Box>`]
-    #[doc(alias = "作業")]
-    operations: Option<Box<RootOperationTree>>,
-}
+    pub enum ServiceMode {
+        /// Also known as `運行なし`.
+        #[default]
+        #[doc(alias = "運行なし")]
+        NoOperation = 0,
+        /// Also known as `停車`.
+        #[doc(alias = "停車")]
+        Stop = 1,
+        /// Also known as `通過`.
+        #[doc(alias = "通過")]
+        Pass = 2,
+    }
+);
+
+wasm_support!(
+    /// A timetable entry
+    /// Also known as `Ekijikoku`.
+    /// Also known as `駅時刻`.
+    #[derive(Default)]
+    #[doc(alias = "Ekijikoku")]
+    #[doc(alias = "駅時刻")]
+    pub struct TimetableEntry {
+        /// Also known as `駅扱`.
+        #[doc(alias = "駅扱")]
+        pub service_mode: ServiceMode,
+        /// Also known as `着時刻`.
+        #[doc(alias = "着時刻")]
+        pub arrival_time: Option<Time>,
+        /// Also known as `発時刻`.
+        #[doc(alias = "発時刻")]
+        pub departure_time: Option<Time>,
+        /// Also known as `着発番線`.
+        #[doc(alias = "着発番線")]
+        pub track_index: Option<usize>,
+        /// Operations associated with this timetable entry.
+        /// Also known as `作業`.
+        #[doc(alias = "作業")]
+        operations: Option<Box<RootOperationTree>>,
+    }
+);
 
 impl TimetableEntry {
     pub fn operations(&self) -> Option<&RootOperationTree> {
