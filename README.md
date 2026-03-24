@@ -1,6 +1,6 @@
 # Paiagram-OuDia
 
-OuDia and OuDiaSecond r/w implementation in Rust.
+OuDia and OuDiaSecond r/w implementation in Rust. Also supports WebAssembly.
 
 ## Licensing
 
