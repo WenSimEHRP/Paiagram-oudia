@@ -4,6 +4,7 @@ version = "0.1.1"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/wensimehrp/paiagram-oudia"
+description = "Utility for parsing .oud and .oud2 formats."
 
 [lib]
 crate-type = ["cdylib", "rlib"]
