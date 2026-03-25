@@ -36,3 +36,7 @@ opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs"]
+all-features = true

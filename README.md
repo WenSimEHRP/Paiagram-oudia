@@ -2,6 +2,8 @@
 
 OuDia and OuDiaSecond r/w implementation in Rust. Also supports WebAssembly.
 
+See <https://docs.rs/paiagram-oudia/> for documentation.
+
 ## Licensing
 
 Everything under `./src` is licensed under the Apache License, Version 2.0, or the MIT License, at your option.

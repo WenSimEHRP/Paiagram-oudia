@@ -1,3 +1,7 @@
+/*!
+Intermediate representation of the .oud/oud2 formats.
+Take a look at [`Root`] to get started.
+*/
 use crate::operation::{InsertOperation, parse_to_operation_hierarchy, parse_to_raw_operation};
 use crate::time::Time;
 use crate::timetable::{TimetableEntry, parse_to_timetable_entry};

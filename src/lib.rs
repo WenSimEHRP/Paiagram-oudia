@@ -1,3 +1,24 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
+/*!
+A utility crate for parsing the .oud/.oud2 formats used by timetabling tools
+[OuDia](https://web.archive.org/web/20240909024820/https://take-okm.a.la9.jp/oudia/index.html)
+and [OuDiaSecond](http://oudiasecond.seesaa.net/). This crate does not support
+parsing WINDIA files.
+
+This parses .oud/.oud2 strings into human readable intermediate
+representation in plain, comprehensible English (as in the [`ir`] module).
+The crate's goal is to provide a friendly interface for interacting with those
+formats. There crate also provides serialization support from AST to .oud/.oud2
+structure.
+
+There's also optional WebAssembly support. You can directly take the prepackaged
+artifact and use it in your web editor.
+
+# Getting Started
+
+To get started, simply use [`parse_oud2_to_ir`] for .oud2, or [`parse_oud_to_ir`]
+for .oud.
+*/
 use crate::ast::parse_to_ast;
 pub use ast::SerializeToOud;
 pub use ast::Structure;
@@ -100,12 +121,14 @@ pub fn parse_oud_to_ir(input: &[u8]) -> Result<Root, IrConversionError> {
 }
 
 #[cfg(feature = "wasm")]
+#[cfg_attr(docsrs, doc(cfg(feature = "wasm")))]
 #[wasm_bindgen]
 pub fn parse_oud2(input: &str) -> Result<Root, JsError> {
     parse_oud2_to_ir(input).map_err(JsError::from)
 }
 
 #[cfg(feature = "wasm")]
+#[cfg_attr(docsrs, doc(cfg(feature = "wasm")))]
 #[wasm_bindgen]
 pub fn parse_oud(input: &[u8]) -> Result<Root, JsError> {
     parse_oud_to_ir(input).map_err(JsError::from)
