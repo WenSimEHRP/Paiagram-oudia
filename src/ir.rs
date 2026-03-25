@@ -351,6 +351,8 @@ pub enum IrConversionError {
     UnknownToken(String),
     #[error("Could not convert string {0} to valid color")]
     ColorConversionError(String),
+    #[error("Structure is empty while parsing {0}")]
+    EmptyError(&'static str),
 }
 
 fn infer_name(v: &[Cow<'_, str>]) -> Result<String, IrConversionError> {
@@ -390,6 +392,9 @@ macro_rules! parse_fields {
         $(
             parse_fields!(@make_variable $once_or_many($variable_name));
         )*
+        if $iter.is_empty() {
+            return Err(IrConversionError::EmptyError(std::any::type_name::<Self>()));
+        }
         for field in $iter {
             match field {
                 $(
@@ -516,8 +521,18 @@ impl<'a> TryFrom<&[Structure<'a>]> for Diagram {
         let mut trips = Vec::new();
         let down_trips_iter = down_trips.into_iter().flatten();
         let up_trips_iter = up_trips.into_iter().flatten();
-        for (_, trip) in down_trips_iter.chain(up_trips_iter).every_struct("Ressya") {
-            trips.push(Trip::try_from(trip)?)
+        for trip_result in down_trips_iter
+            .chain(up_trips_iter)
+            .every_struct("Ressya")
+            .map(|(_, trip)| Trip::try_from(trip))
+        {
+            match trip_result {
+                Ok(r) => trips.push(r),
+                Err(Self::Error::EmptyError(_)) => {
+                    continue;
+                }
+                Err(e) => return Err(e),
+            }
         }
         Ok(Self { name, trips })
     }
