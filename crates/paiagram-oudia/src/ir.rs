@@ -8,6 +8,7 @@ use crate::timetable::{TimetableEntry, parse_to_timetable_entry};
 use crate::{pair, structure};
 use smallvec::SmallVec;
 use std::borrow::Cow;
+use std::cmp::{min, max};
 use thiserror::Error;
 
 wasm_support!(
@@ -283,8 +284,116 @@ pub struct Rotation<'a> {
     pub trips: Vec<&'a Trip>,
 }
 
+fn travelling_duration(curr: &TimetableEntry, next: &TimetableEntry) -> Option<Time> {
+    let curr_time = curr.departure_time.or(curr.arrival_time)?;
+    let mut next_time = next.arrival_time.or(next.departure_time)?;
+    if curr_time > next_time {
+        next_time += Time::from_seconds(86400);
+    }
+    Some(next_time - curr_time)
+}
+
 impl Diagram {
-    pub fn rotations<'a>(&self, _stations: &[Station]) -> Vec<Rotation<'a>> {
+    /// 5 minutes
+    pub const DEFAULT_INTERVAL_SECONDS: Time = Time::from_seconds(60 * 5);
+
+    /// Return the average travel length between stations
+    /// The iterator would yield None the case where no trips traverse an interval.
+    pub fn average_interval_durations(
+        &self,
+        stations: &[Station],
+    ) -> impl Iterator<Item = Option<Time>> {
+        (0..stations.len().saturating_sub(1)).map(move |idx| {
+            let mut avg_seconds: i32 = 0;
+            let mut count: i32 = 0;
+            for trip in self.trips.iter() {
+                let (curr, next) = match trip.direction {
+                    Direction::Down => {
+                        let Some(next_entry) = trip.times.get(idx + 1) else {
+                            continue;
+                        };
+                        (&trip.times[idx], next_entry)
+                    }
+                    Direction::Up => {
+                        let base = stations.len() - 2 - idx;
+                        let Some(next_entry) = trip.times.get(base + 1) else {
+                            continue;
+                        };
+                        (&trip.times[base], next_entry)
+                    }
+                };
+                let Some(diff) = travelling_duration(curr, next) else {
+                    continue;
+                };
+                avg_seconds += diff.seconds();
+                count += 1;
+            }
+            (count != 0).then(|| Time::from_seconds(avg_seconds / count))
+        })
+    }
+
+    /// Return the extreme travel length between stations
+    /// The iterator would yield None the case where no trips traverse an interval.
+    fn extrema_interval_durations<const MINIMUM: bool>(
+        &self,
+        stations: &[Station],
+    ) -> impl Iterator<Item = Option<Time>> {
+        (0..stations.len().saturating_sub(1)).map(move |idx| {
+            let mut extreme = if MINIMUM {
+                Time::from_seconds(i32::MAX)
+            } else {
+                Time::from_seconds(i32::MIN)
+            };
+            let mut exist: bool = false;
+            for trip in self.trips.iter() {
+                let (curr, next) = match trip.direction {
+                    Direction::Down => {
+                        let Some(next_entry) = trip.times.get(idx + 1) else {
+                            continue;
+                        };
+                        (&trip.times[idx], next_entry)
+                    }
+                    Direction::Up => {
+                        let base = stations.len() - 2 - idx;
+                        let Some(next_entry) = trip.times.get(base + 1) else {
+                            continue;
+                        };
+                        (&trip.times[base], next_entry)
+                    }
+                };
+                let Some(diff) = travelling_duration(curr, next) else {
+                    continue;
+                };
+                extreme = if MINIMUM {
+                    min(extreme, diff)
+                } else {
+                    max(extreme, diff)
+                };
+                exist = true;
+            }
+            exist.then_some(extreme)
+        })
+    }
+
+    /// Return the minimum travel length between stations
+    /// The iterator would yield None the case where no trips traverse an interval.
+    pub fn minimum_interval_durations(
+        &self,
+        stations: &[Station],
+    ) -> impl Iterator<Item = Option<Time>> {
+        self.extrema_interval_durations::<true>(stations)
+    }
+
+    /// Return the maximum travel length between stations
+    /// The iterator would yield None the case where no trips traverse an interval.
+    pub fn maximum_interval_durations(
+        &self,
+        stations: &[Station],
+    ) -> impl Iterator<Item = Option<Time>> {
+        self.extrema_interval_durations::<false>(stations)
+    }
+
+    fn rotations<'a>(&self, _stations: &[Station]) -> Vec<Rotation<'a>> {
         // struct Train<'a> {
         //     head: &'a str,
         //     rest: Vec<&'a str>,
@@ -618,20 +727,22 @@ mod test {
     use crate::ast::parse_to_ast;
     type E = Result<(), Box<dyn std::error::Error>>;
 
+    fn get_ir() -> Result<Root, IrConversionError> {
+        let s = include_str!("../test/sample.oud2");
+        let ast = parse_to_ast(s)?;
+        Root::try_from(ast.as_slice())
+    }
+
     #[test]
     fn test_parse_ast_to_ir() -> E {
-        let s = include_str!("../test/sample2.oud2");
-        let ast = parse_to_ast(s)?;
-        let ir = Root::try_from(ast.as_slice())?;
+        let ir = get_ir()?;
         println!("{ir:#?}");
         Ok(())
     }
 
     #[test]
     fn test_rotations() -> E {
-        let s = include_str!("../test/sample.oud2");
-        let ast = parse_to_ast(s)?;
-        let ir = Root::try_from(ast.as_slice())?;
+        let ir = get_ir()?;
         if let Some(diagram) = ir.route.diagrams.first() {
             let mut rotations = diagram.rotations(&ir.route.stations);
             rotations.sort_by_key(|it| it.name.clone());
@@ -641,6 +752,36 @@ mod test {
                     println!("{}", trip.name.as_deref().unwrap_or("<unnamed>"))
                 }
             }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn average_interval_durations() -> E {
+        let ir = get_ir()?;
+        let diagram = &ir.route.diagrams[0];
+        for time in diagram.average_interval_durations(&ir.route.stations) {
+            println!("{:#?}", time);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn minimum_interval_durations() -> E {
+        let ir = get_ir()?;
+        let diagram = &ir.route.diagrams[0];
+        for time in diagram.minimum_interval_durations(&ir.route.stations) {
+            println!("{:#?}", time);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn maximum_interval_durations() -> E {
+        let ir = get_ir()?;
+        let diagram = &ir.route.diagrams[0];
+        for time in diagram.maximum_interval_durations(&ir.route.stations) {
+            println!("{:#?}", time);
         }
         Ok(())
     }

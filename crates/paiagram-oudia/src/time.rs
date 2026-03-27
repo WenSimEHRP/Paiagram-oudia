@@ -46,6 +46,12 @@ impl std::str::FromStr for Time {
 }
 
 impl Time {
+    pub const fn from_seconds(seconds: i32) -> Self {
+        Self(seconds)
+    }
+}
+
+impl Time {
     pub fn hour(self) -> i32 {
         self.0 / 3600
     }
