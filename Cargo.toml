@@ -1,42 +1,11 @@
-[package]
-name = "paiagram-oudia"
+[workspace]
+resolver = "3"
+members = ["crates/converter","crates/paiagram-oudia"]
+default-members = ["crates/paiagram-oudia"]
+
+[workspace.package]
 version = "0.1.2"
 edition = "2024"
 license = "MIT OR Apache-2.0"
+authors = ["Jeremy Gao <wensimehrp@gmail.com>"]
 repository = "https://github.com/wensimehrp/paiagram-oudia"
-description = "Utility for parsing .oud and .oud2 formats."
-
-[lib]
-crate-type = ["cdylib", "rlib"]
-
-[dependencies]
-derive_more = { version = "2.1.1", features = ["full"] }
-encoding_rs = "0.8.35"
-pest = "2.8.6"
-pest_consume = "1.1.3"
-pest_derive = "2.8.6"
-smallvec = "1.15.1"
-thiserror = "2.0.18"
-serde = { version = "1.0.228", optional = true, features = ["derive"] }
-wasm-bindgen = { version = "0.2.114", optional = true }
-serde-wasm-bindgen = { version = "0.6.5", optional = true }
-tsify = { version = "0.5.6", optional = true, features = ["js"] }
-
-[features]
-serde = ["dep:serde", "smallvec/serde"]
-wasm = [
-    "serde",
-    "dep:wasm-bindgen",
-    "dep:serde-wasm-bindgen",
-    "dep:tsify"
-]
-
-[profile.release]
-opt-level = "z"
-lto = true
-codegen-units = 1
-panic = "abort"
-
-[package.metadata.docs.rs]
-rustdoc-args = ["--cfg", "docsrs"]
-all-features = true

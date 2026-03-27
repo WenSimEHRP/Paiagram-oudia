@@ -18,8 +18,11 @@ artifact and use it in your web editor.
 
 To get started, simply use [`parse_oud2_to_ir`] for .oud2, or [`parse_oud_to_ir`]
 for .oud.
+
+Alternatively, you can use [`parse_to_ast`] if you want ot parse a file to AST and
+interact with the AST directly.
 */
-use crate::ast::parse_to_ast;
+pub use ast::parse_to_ast;
 pub use ast::SerializeToOud;
 pub use ast::Structure;
 pub use ir::*;

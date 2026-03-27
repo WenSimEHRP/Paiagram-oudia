@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-wasm-pack build --target web -- --features wasm
+wasm-pack build ./crates/paiagram-oudia --target web -- --features wasm
