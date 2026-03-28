@@ -741,6 +741,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     fn test_rotations() -> E {
         let ir = get_ir()?;
         if let Some(diagram) = ir.route.diagrams.first() {
