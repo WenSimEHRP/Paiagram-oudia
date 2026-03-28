@@ -49,6 +49,9 @@ impl Time {
     pub const fn from_seconds(seconds: i32) -> Self {
         Self(seconds)
     }
+    pub const fn from_hms(hour: i32, minute: i32, second: i32) -> Self {
+        Self(hour * 3600 + minute * 60 + second)
+    }
 }
 
 impl Time {
