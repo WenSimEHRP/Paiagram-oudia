@@ -49,7 +49,7 @@ jobs:
 
       - name: Build converter
         working-directory: crates/converter
-        run: trunk build --release
+        run: trunk build --release --public-url "/${{ github.event.repository.name }}/"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
