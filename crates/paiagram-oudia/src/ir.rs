@@ -112,6 +112,11 @@ wasm_support!(
         #[doc(alias = "EkiTrack2Cont")]
         #[cfg_attr(feature = "wasm", tsify(type = "Track[]"))]
         pub tracks: SmallVec<[Track; 2]>,
+        /// Also known as `Ekikibo`
+        /// Also known as `駅規模`
+        #[doc(alias = "Ekikibo")]
+        #[doc(alias = "駅規模")]
+        pub station_type: StationType
     }
 );
 
@@ -233,6 +238,38 @@ impl std::str::FromStr for Direction {
             Ok(Self::Down)
         } else if s == "Nobori" {
             Ok(Self::Up)
+        } else {
+            Err(IrConversionError::UnknownToken(s.to_string()))
+        }
+    }
+}
+
+wasm_support!(
+    /// Also known as `Ekikibo`.
+    /// Also known as `駅規模`.
+    #[doc(alias = "Ekikibo")]
+    #[doc(alias = "駅規模")]
+    pub enum StationType {
+        /// Also known as `Ekikibo_Syuyou`.
+        /// Also known as `駅規模_主要`.
+        #[doc(alias = "Ekikibo_Syuyou")]
+        #[doc(alias = "駅規模_主要")]
+        Major,
+        /// Also known as `Kudari`.
+        /// Also known as `下り`.
+        #[doc(alias = "Ekikibo_Ippan")]
+        #[doc(alias = "駅規模_一般")]
+        Minor,
+    }
+);
+
+impl std::str::FromStr for StationType {
+    type Err = IrConversionError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s == "Ekikibo_Syuyou" {
+            Ok(Self::Major)
+        } else if s == "Ekikibo_Ippan" {
+            Ok(Self::Minor)
         } else {
             Err(IrConversionError::UnknownToken(s.to_string()))
         }
@@ -593,6 +630,7 @@ impl<'a> TryFrom<&[Structure<'a>]> for Station {
     fn try_from(value: &[Structure<'a>]) -> Result<Self, Self::Error> {
         parse_fields!(value;
             RequiredOnce(Pair("Ekimei", name)) => infer_name,
+            RequiredOnce(Pair("Ekikibo", station_type)) => infer_parse::<StationType>,
             OptionalOnce(Pair("EkimeiJikokuRyaku", timetable_abbreviation)) => infer_name,
             OptionalOnce(Pair("EkimeiDiaRyaku", diagram_abbreviation)) => infer_name,
             // There is a spelling mistake in the original software. Instead of "Brunch" it should be "Branch"
@@ -615,6 +653,7 @@ impl<'a> TryFrom<&[Structure<'a>]> for Station {
             branch_index,
             loop_index,
             tracks,
+            station_type
         })
     }
 }

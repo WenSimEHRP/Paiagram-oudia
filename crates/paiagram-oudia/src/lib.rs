@@ -22,9 +22,9 @@ for .oud.
 Alternatively, you can use [`parse_to_ast`] if you want ot parse a file to AST and
 interact with the AST directly.
 */
-pub use ast::parse_to_ast;
 pub use ast::SerializeToOud;
 pub use ast::Structure;
+pub use ast::parse_to_ast;
 pub use ir::*;
 pub use time::Time;
 pub use timetable::{ServiceMode, TimetableEntry};
@@ -135,4 +135,37 @@ pub fn parse_oud2(input: &str) -> Result<Root, JsError> {
 #[wasm_bindgen]
 pub fn parse_oud(input: &[u8]) -> Result<Root, JsError> {
     parse_oud_to_ir(input).map_err(JsError::from)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::path::PathBuf;
+    type E = Result<(), Box<dyn std::error::Error>>;
+
+    #[test]
+    fn parse_all_files_to_ir() -> E {
+        let mut dir_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        dir_path.push("test");
+        let entries = std::fs::read_dir(dir_path)?;
+        for entry in entries {
+            let path = entry?.path();
+            if path.is_file() {
+                let ext = path.extension().and_then(|s| s.to_str());
+                match ext {
+                    Some("oud") => {
+                        let content = std::fs::read(&path)?;
+                        parse_oud_to_ir(&content)?;
+                    }
+                    Some("oud2") => {
+                        let content = std::fs::read_to_string(&path)?;
+                        parse_oud2_to_ir(&content)?;
+                    }
+                    // Ignore everything else
+                    _ => continue,
+                }
+            }
+        }
+        Ok(())
+    }
 }
