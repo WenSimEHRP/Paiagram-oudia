@@ -8,7 +8,7 @@ use crate::timetable::{TimetableEntry, parse_to_timetable_entry};
 use crate::{pair, structure};
 use smallvec::SmallVec;
 use std::borrow::Cow;
-use std::cmp::{min, max};
+use std::cmp::{max, min};
 use thiserror::Error;
 
 wasm_support!(
@@ -18,6 +18,12 @@ wasm_support!(
         /// Also known as `FileType`.
         #[doc(alias = "FileType")]
         pub file_type: String,
+        /// Also known as `Display2400`.
+        #[doc(alias = "Display2400")]
+        pub display_2400: Option<usize>,
+        /// Also known as `FileTypeAppComment`.
+        #[doc(alias = "FileTypeAppComment")]
+        pub file_type_app_comment: Option<String>,
         /// The route in the file.
         /// Also known as `Rosen`.
         /// Also known as `路線`.
@@ -39,6 +45,15 @@ wasm_support!(
         #[doc(alias = "Rosenmei")]
         #[doc(alias = "路線名")]
         pub name: String,
+        /// Also known as `KudariDiaAlias`.
+        #[doc(alias = "KudariDiaAlias")]
+        pub down_diagram_alias: Option<String>,
+        /// Also known as `NoboriDiaAlias`.
+        #[doc(alias = "NoboriDiaAlias")]
+        pub up_diagram_alias: Option<String>,
+        /// Also known as `EnableOperation`.
+        #[doc(alias = "EnableOperation")]
+        pub enable_operation: Option<usize>,
         /// What stations are included in the route
         /// Also known as `Eki`.
         /// Also known as `駅`.
@@ -116,7 +131,7 @@ wasm_support!(
         /// Also known as `駅規模`
         #[doc(alias = "Ekikibo")]
         #[doc(alias = "駅規模")]
-        pub station_type: StationType
+        pub station_type: StationType,
     }
 );
 
@@ -130,6 +145,9 @@ wasm_support!(
         #[doc(alias = "TrackRyakusyou")]
         #[doc(alias = "Track略称")]
         pub abbreviation: String,
+        /// Also known as `TrackNoboriRyakusyou`.
+        #[doc(alias = "TrackNoboriRyakusyou")]
+        pub up_abbreviation: Option<String>,
     }
 );
 
@@ -195,6 +213,9 @@ wasm_support!(
         #[doc(alias = "DiagramSenColor")]
         #[doc(alias = "ダイア線Color")]
         pub diagram_line_color: Color,
+        /// Also known as `ParentSyubetsuIndex`.
+        #[doc(alias = "ParentSyubetsuIndex")]
+        pub parent_class_index: Option<usize>,
     }
 );
 
@@ -208,6 +229,15 @@ wasm_support!(
         /// Also known as `DiaName`.
         #[doc(alias = "DiaName")]
         pub name: Option<String>,
+        /// Also known as `MainBackColorIndex`.
+        #[doc(alias = "MainBackColorIndex")]
+        pub main_back_color_index: Option<usize>,
+        /// Also known as `SubBackColorIndex`.
+        #[doc(alias = "SubBackColorIndex")]
+        pub sub_back_color_index: Option<usize>,
+        /// Also known as `BackPatternIndex`.
+        #[doc(alias = "BackPatternIndex")]
+        pub back_pattern_index: Option<usize>,
         pub trips: Vec<Trip>,
     }
 );
@@ -529,6 +559,26 @@ where
     s.parse::<T>().map_err(IrConversionError::from)
 }
 
+fn first_pair_parse<T>(v: &[Structure<'_>], key: &str) -> Result<Option<T>, IrConversionError>
+where
+    T: std::str::FromStr,
+    IrConversionError: From<T::Err>,
+{
+    for field in v {
+        let Structure::Pair(k, val) = field else {
+            continue;
+        };
+        if k == key {
+            return Ok(Some(infer_parse::<T>(val.as_slice())?));
+        }
+    }
+    Ok(None)
+}
+
+fn infer_first_or_empty_string(v: &[Cow<'_, str>]) -> Result<String, IrConversionError> {
+    Ok(v.first().cloned().unwrap_or_default().to_string())
+}
+
 fn pass<'r, 'a>(v: &'r [Structure<'a>]) -> Result<&'r [Structure<'a>], IrConversionError> {
     Ok(v)
 }
@@ -597,9 +647,18 @@ impl<'a> TryFrom<&[Structure<'a>]> for Root {
     fn try_from(value: &[Structure<'a>]) -> Result<Self, Self::Error> {
         parse_fields!(value;
             RequiredOnce(Pair("FileType", file_type)) => infer_name,
+            OptionalOnce(Struct("DispProp", display_props)) => pass,
+            OptionalOnce(Pair("FileTypeAppComment", file_type_app_comment)) => infer_name,
             RequiredOnce(Struct("Rosen", route)) => Route::try_from,
         );
-        Ok(Self { file_type, route })
+        let display_2400 =
+            first_pair_parse::<usize>(display_props.unwrap_or_default(), "Display2400")?;
+        Ok(Self {
+            file_type,
+            display_2400,
+            file_type_app_comment,
+            route,
+        })
     }
 }
 
@@ -611,11 +670,17 @@ impl<'a> TryFrom<&[Structure<'a>]> for Route {
             Many(Struct("Dia", diagrams)) => Diagram::try_from,
             Many(Struct("Ressyasyubetsu", classes)) => Class::try_from,
             RequiredOnce(Pair("Rosenmei", name)) => infer_name,
+            OptionalOnce(Pair("KudariDiaAlias", down_diagram_alias)) => infer_first_or_empty_string,
+            OptionalOnce(Pair("NoboriDiaAlias", up_diagram_alias)) => infer_first_or_empty_string,
+            OptionalOnce(Pair("EnableOperation", enable_operation)) => infer_parse::<usize>,
             RequiredOnce(Pair("KitenJikoku", display_start_time)) => infer_parse::<Time>,
             RequiredOnce(Pair("Comment", comment)) => infer_name,
         );
         Ok(Self {
             name,
+            down_diagram_alias,
+            up_diagram_alias,
+            enable_operation,
             stations,
             classes,
             diagrams,
@@ -643,8 +708,13 @@ impl<'a> TryFrom<&[Structure<'a>]> for Station {
             parse_fields!(ast;
                 RequiredOnce(Pair("TrackName", name)) => infer_name,
                 RequiredOnce(Pair("TrackRyakusyou", abbreviation)) => infer_name,
+                OptionalOnce(Pair("TrackNoboriRyakusyou", up_abbreviation)) => infer_name,
             );
-            tracks.push(Track { name, abbreviation })
+            tracks.push(Track {
+                name,
+                abbreviation,
+                up_abbreviation,
+            })
         }
         Ok(Self {
             name,
@@ -653,7 +723,7 @@ impl<'a> TryFrom<&[Structure<'a>]> for Station {
             branch_index,
             loop_index,
             tracks,
-            station_type
+            station_type,
         })
     }
 }
@@ -663,6 +733,9 @@ impl<'a> TryFrom<&[Structure<'a>]> for Diagram {
     fn try_from(value: &[Structure<'a>]) -> Result<Self, Self::Error> {
         parse_fields!(value;
             OptionalOnce(Pair("DiaName", name)) => infer_name,
+            OptionalOnce(Pair("MainBackColorIndex", main_back_color_index)) => infer_parse::<usize>,
+            OptionalOnce(Pair("SubBackColorIndex", sub_back_color_index)) => infer_parse::<usize>,
+            OptionalOnce(Pair("BackPatternIndex", back_pattern_index)) => infer_parse::<usize>,
             Many(Struct("Nobori", up_trips)) => pass,
             Many(Struct("Kudari", down_trips)) => pass,
         );
@@ -682,7 +755,13 @@ impl<'a> TryFrom<&[Structure<'a>]> for Diagram {
                 Err(e) => return Err(e),
             }
         }
-        Ok(Self { name, trips })
+        Ok(Self {
+            name,
+            main_back_color_index,
+            sub_back_color_index,
+            back_pattern_index,
+            trips,
+        })
     }
 }
 
@@ -736,11 +815,13 @@ impl<'a> TryFrom<&[Structure<'a>]> for Class {
             RequiredOnce(Pair("Syubetsumei", name)) => infer_name,
             OptionalOnce(Pair("Ryakusyou", abbreviation)) => infer_name,
             RequiredOnce(Pair("DiagramSenColor", diagram_line_color)) => infer_parse::<Color>,
+            OptionalOnce(Pair("ParentSyubetsuIndex", parent_class_index)) => infer_parse::<usize>,
         );
         Ok(Self {
             name,
             abbreviation,
             diagram_line_color,
+            parent_class_index,
         })
     }
 }
@@ -768,6 +849,12 @@ mod test {
 
     fn get_ir() -> Result<Root, IrConversionError> {
         let s = include_str!("../test/sample.oud2");
+        let ast = parse_to_ast(s)?;
+        Root::try_from(ast.as_slice())
+    }
+
+    fn get_ir_2() -> Result<Root, IrConversionError> {
+        let s = include_str!("../test/sample2.oud2");
         let ast = parse_to_ast(s)?;
         Root::try_from(ast.as_slice())
     }
@@ -823,6 +910,47 @@ mod test {
         for time in diagram.maximum_interval_durations(&ir.route.stations) {
             println!("{:#?}", time);
         }
+        Ok(())
+    }
+
+    #[test]
+    fn parse_additional_oud2_fields() -> E {
+        let ir = get_ir_2()?;
+        assert_eq!(ir.display_2400, Some(1));
+        assert_eq!(ir.route.enable_operation, Some(2));
+        assert_eq!(
+            ir.file_type_app_comment.as_deref(),
+            Some("OuDiaSecondV2 Ver. 2.06.06")
+        );
+        assert_eq!(ir.route.down_diagram_alias.as_deref(), Some(""));
+        assert_eq!(ir.route.up_diagram_alias.as_deref(), Some(""));
+        assert_eq!(
+            ir.route.stations[0].tracks[0].up_abbreviation.as_deref(),
+            Some("降1")
+        );
+        let class_with_parent = ir
+            .route
+            .classes
+            .iter()
+            .find(|class| class.name == "各駅停車(本線)")
+            .unwrap();
+        assert_eq!(class_with_parent.parent_class_index, Some(0));
+        let first_diagram = &ir.route.diagrams[0];
+        assert_eq!(first_diagram.main_back_color_index, Some(0));
+        assert_eq!(first_diagram.sub_back_color_index, Some(1));
+        assert_eq!(first_diagram.back_pattern_index, Some(0));
+
+        let sample = include_str!("../test/sample2.oud2");
+        let sample_with_alias = sample
+            .replacen("KudariDiaAlias=\n", "KudariDiaAlias=down\n", 1)
+            .replacen("NoboriDiaAlias=\n", "NoboriDiaAlias=up\n", 1);
+        let ast = parse_to_ast(&sample_with_alias)?;
+        let ir_with_alias = Root::try_from(ast.as_slice())?;
+        assert_eq!(
+            ir_with_alias.route.down_diagram_alias.as_deref(),
+            Some("down")
+        );
+        assert_eq!(ir_with_alias.route.up_diagram_alias.as_deref(), Some("up"));
         Ok(())
     }
 }
