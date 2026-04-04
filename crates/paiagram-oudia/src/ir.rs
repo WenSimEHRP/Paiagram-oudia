@@ -575,7 +575,7 @@ where
     Ok(None)
 }
 
-fn infer_name_or_empty(v: &[Cow<'_, str>]) -> Result<String, IrConversionError> {
+fn infer_first_or_empty_string(v: &[Cow<'_, str>]) -> Result<String, IrConversionError> {
     Ok(v.first().cloned().unwrap_or_default().to_string())
 }
 
@@ -670,8 +670,8 @@ impl<'a> TryFrom<&[Structure<'a>]> for Route {
             Many(Struct("Dia", diagrams)) => Diagram::try_from,
             Many(Struct("Ressyasyubetsu", classes)) => Class::try_from,
             RequiredOnce(Pair("Rosenmei", name)) => infer_name,
-            OptionalOnce(Pair("KudariDiaAlias", down_diagram_alias)) => infer_name_or_empty,
-            OptionalOnce(Pair("NoboriDiaAlias", up_diagram_alias)) => infer_name_or_empty,
+            OptionalOnce(Pair("KudariDiaAlias", down_diagram_alias)) => infer_first_or_empty_string,
+            OptionalOnce(Pair("NoboriDiaAlias", up_diagram_alias)) => infer_first_or_empty_string,
             OptionalOnce(Pair("EnableOperation", enable_operation)) => infer_parse::<usize>,
             RequiredOnce(Pair("KitenJikoku", display_start_time)) => infer_parse::<Time>,
             RequiredOnce(Pair("Comment", comment)) => infer_name,
@@ -939,6 +939,18 @@ mod test {
         assert_eq!(first_diagram.main_back_color_index, Some(0));
         assert_eq!(first_diagram.sub_back_color_index, Some(1));
         assert_eq!(first_diagram.back_pattern_index, Some(0));
+
+        let sample = include_str!("../test/sample2.oud2");
+        let sample_with_alias = sample
+            .replacen("KudariDiaAlias=\n", "KudariDiaAlias=down\n", 1)
+            .replacen("NoboriDiaAlias=\n", "NoboriDiaAlias=up\n", 1);
+        let ast = parse_to_ast(&sample_with_alias)?;
+        let ir_with_alias = Root::try_from(ast.as_slice())?;
+        assert_eq!(
+            ir_with_alias.route.down_diagram_alias.as_deref(),
+            Some("down")
+        );
+        assert_eq!(ir_with_alias.route.up_diagram_alias.as_deref(), Some("up"));
         Ok(())
     }
 }
